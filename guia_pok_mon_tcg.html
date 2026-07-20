@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guia Intuitivo: Como Jogar Pokémon TCG</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom scrollbar for better look */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555; 
+        }
+        .content-section {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        .content-section.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .nav-button.active {
+            background-color: #ef4444; /* red-500 */
+            color: white;
+            font-weight: bold;
+        }
+        
+        /* Tutorial Animations */
+        .tutorial-board {
+            perspective: 1000px;
+        }
+        .card-sprite {
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* Energy Attachment Animation */
+        @keyframes attachEnergyAnim {
+            0% { opacity: 0; transform: translate(50px, 100px) scale(1.5); }
+            50% { opacity: 1; transform: translate(10px, -20px) scale(1.2); }
+            100% { opacity: 1; transform: translate(-15px, -15px) scale(1); z-index: 0; }
+        }
+        .energy-attached {
+            animation: attachEnergyAnim 1s forwards;
+            display: flex !important;
+        }
+
+        /* Attack Animation (Tackle) */
+        @keyframes tackleAnim {
+            0% { transform: translateY(0) scale(1); }
+            40% { transform: translateY(20px) scale(0.9); } /* Pull back */
+            60% { transform: translateY(-80px) scale(1.1); z-index: 10; } /* Strike */
+            100% { transform: translateY(0) scale(1); } /* Return */
+        }
+        .is-attacking {
+            animation: tackleAnim 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        /* Damage/Shake Animation */
+        @keyframes shakeAnim {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        .is-taking-damage {
+            animation: shakeAnim 0.5s ease-in-out;
+            filter: drop-shadow(0 0 10px red);
+        }
+
+        /* Damage Number Popup */
+        @keyframes damagePopupAnim {
+            0% { opacity: 0; transform: translateY(10px) scale(0.5); }
+            20% { opacity: 1; transform: translateY(-20px) scale(1.5); }
+            80% { opacity: 1; transform: translateY(-30px) scale(1); }
+            100% { opacity: 0; transform: translateY(-40px) scale(0.8); }
+        }
+        .damage-popup {
+            animation: damagePopupAnim 1.5s forwards;
+        }
+
+        /* Faint Animation */
+        @keyframes faintAnim {
+            0% { opacity: 1; transform: translateY(0); filter: grayscale(0%); }
+            100% { opacity: 0; transform: translateY(50px); filter: grayscale(100%); }
+        }
+        .is-fainting {
+            animation: faintAnim 1s forwards;
+        }
+        
+        /* Prize Card Animation */
+        @keyframes prizeAnim {
+            0% { transform: scale(1); box-shadow: none; }
+            50% { transform: scale(1.2) translateY(-20px); box-shadow: 0 10px 15px -3px rgba(234, 179, 8, 0.5); }
+            100% { transform: scale(1); opacity: 0; }
+        }
+        .prize-taken {
+            animation: prizeAnim 1.5s forwards;
+        }
+
+        /* Pokédex Styles */
+        .type-badge {
+            text-transform: uppercase;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.65rem;
+            font-weight: 800;
+            color: white;
+            letter-spacing: 0.5px;
+            box-shadow: inset 0 -2px 0 rgba(0,0,0,0.2);
+        }
+        .poke-card {
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        .poke-card:hover {
+            transform: translateY(-5px) scale(1.02);
+        }
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #ef4444;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans h-screen flex overflow-hidden">
+
+    <!-- Sidebar Navigation -->
+    <nav class="w-64 bg-white border-r border-gray-200 h-full flex flex-col shadow-lg z-10 flex-shrink-0">
+        <div class="p-6 bg-red-600 text-white flex items-center justify-center">
+            <svg class="w-8 h-8 mr-3" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm0-2a8 8 0 100-16 8 8 0 000 16zm-5-9a5 5 0 0110 0h-2a3 3 0 00-6 0H7zm5 2a2 2 0 100-4 2 2 0 000 4z"/>
+            </svg>
+            <h1 class="text-xl font-bold tracking-wider">TCG Guide</h1>
+        </div>
+        <div class="overflow-y-auto flex-grow p-4 space-y-2" id="nav-menu">
+            <!-- Navigation items will be generated by JS -->
+        </div>
+        <div class="p-4 border-t border-gray-200 text-xs text-center text-gray-500">
+            Guia Básico v1.0
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow h-full overflow-y-auto bg-gray-50 relative">
+        <div class="max-w-4xl mx-auto p-8 pb-20" id="content-area">
+            <!-- Content sections will be placed here -->
+            
+            <!-- Section: Introdução -->
+            <section id="intro" class="content-section active bg-white p-8 rounded-xl shadow-md border-t-4 border-red-500">
+                <h2 class="text-3xl font-bold mb-6 text-gray-900 border-b pb-2">O Objetivo do Jogo</h2>
+                <div class="space-y-4 text-lg leading-relaxed">
+                    <p>Bem-vindo ao mundo do Pokémon Trading Card Game! O objetivo principal é simples:</p>
+                    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded text-yellow-800 font-semibold text-xl my-6 flex items-center justify-center">
+                        Derrotar os Pokémon do seu oponente e pegar todas as suas 6 Cartas de Prêmio!
+                    </div>
+                    <h3 class="text-xl font-bold mt-6 mb-2">Como você ganha? (3 formas)</h3>
+                    <ul class="list-disc pl-6 space-y-2">
+                        <li><strong>Pegar todos os Prêmios:</strong> Você pega 1 Carta de Prêmio cada vez que nocauteia um Pokémon do oponente (alguns Pokémon mais fortes dão 2 ou 3 prêmios).</li>
+                        <li><strong>Sem Pokémon em Jogo:</strong> Se você nocautear o último Pokémon em jogo do oponente (Ativo e no Banco), você ganha.</li>
+                        <li><strong>Fim do Baralho:</strong> Se, no começo do turno, o oponente não puder comprar uma carta pois seu baralho acabou, você ganha.</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Section: O Que Precisa -->
+            <section id="components" class="content-section bg-white p-8 rounded-xl shadow-md border-t-4 border-blue-500">
+                <h2 class="text-3xl font-bold mb-6 text-gray-900 border-b pb-2">O Que Você Precisa</h2>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="bg-gray-100 p-5 rounded-lg border border-gray-200">
+                        <div class="flex items-center mb-3">
+                            <span class="text-2xl mr-2">🃏</span>
+                            <h3 class="font-bold text-xl">Baralho (Deck)</h3>
+                        </div>
+                        <p>Um baralho de exatamente <strong>60 cartas</strong>. Você não pode jogar com mais nem com menos. Você só pode ter até 4 cartas com o mesmo nome (exceto Energias Básicas).</p>
+                    </div>
+                    <div class="bg-gray-100 p-5 rounded-lg border border-gray-200">
+                        <div class="flex items-center mb-3">
+                            <span class="text-2xl mr-2">🎲</span>
+                            <h3 class="font-bold text-xl">Marcadores de Dano</h3>
+                        </div>
+                        <p>Dados ou moedas para marcar quanto de dano os Pokémon receberam. (Normalmente dados, onde o número = dezenas de dano. Ex: 5 = 50 de dano).</p>
+                    </div>
+                    <div class="bg-gray-100 p-5 rounded-lg border border-gray-200">
+                        <div class="flex items-center mb-3">
+                            <span class="text-2xl mr-2">🪙</span>
+                            <h3 class="font-bold text-xl">Moeda ou Dado</h3>
+                        </div>
+                        <p>Para jogar cara ou coroa (flip a coin). Se usar um dado de 6 lados: pares = Cara, ímpares = Coroa.</p>
+                    </div>
+                    <div class="bg-gray-100 p-5 rounded-lg border border-gray-200">
+                        <div class="flex items-center mb-3">
+                            <span class="text-2xl mr-2">🔥</span>
+                            <h3 class="font-bold text-xl">Marcadores Especiais</h3>
+                        </div>
+                        <p>Marcadores para indicar Condições Especiais (Queimado, Envenenado) e marcador VSTAR ou GX (usados uma vez por jogo).</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Tipos de Cartas -->
+            <section id="card-types" class="content-section bg-white p-8 rounded-xl shadow-md border-t-4 border-green-500">
+                <h2 class="text-3xl font-bold mb-6 text-gray-900 border-b pb-2">Tipos de Cartas</h2>
+                
+                <div class="space-y-8">
+                    <!-- Pokémon -->
+                    <div class="flex flex-col md:flex-row gap-6 items-start">
+                        <div class="w-full md:w-1/3 bg-yellow-100 border-2 border-yellow-400 rounded-xl p-4 text-center aspect-[2.5/3.5] flex flex-col justify-between shadow-sm">
+                            <div class="flex justify-between font-bold text-sm">
+                                <span>Básico</span>
+                                <span class="text-red-600">60 HP</span>
+                            </div>
+                            <div class="flex-grow flex items-center justify-center">
+                                <span class="text-4xl">🐭</span>
+                            </div>
+                            <div class="bg-white p-2 rounded text-sm text-left border">
+                                <div class="font-bold">Investida</div>
+                                <div class="text-gray-500 text-xs">Causa 10 de dano.</div>
+                            </div>
+                        </div>
+                        <div class="w-full md:w-2/3">
+                            <h3 class="text-2xl font-bold text-yellow-600 mb-2">Cartas de Pokémon</h3>
+                            <p class="mb-4">São os lutadores do jogo. Eles atacam e recebem dano.</p>
+                            <ul class="list-disc pl-5 space-y-1">
+                                <li><strong>Básicos:</strong> Podem ser colocados direto em jogo.</li>
+                                <li><strong>Estágio 1 e 2:</strong> São evoluções. Devem ser jogados em cima do Pokémon do estágio anterior (Ex: Charmeleon em cima de Charmander).</li>
+                                <li><strong>Pokémon Especiais (ex, V, VMAX, VSTAR):</strong> São mais fortes, têm mais HP, mas dar 2 ou 3 Cartas de Prêmio se derrotados.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Energia -->
+                    <div class="flex flex-col md:flex-row gap-6 items-start">
+                        <div class="w-full md:w-1/3 bg-gray-200 border-2 border-gray-400 rounded-xl p-4 flex items-center justify-center aspect-[2.5/3.5] shadow-sm">
+                            <div class="w-16 h-16 rounded-full bg-yellow-400 flex items-center justify-center text-white text-3xl font-bold border-4 border-white shadow">
+                                ⚡
+                            </div>
+                        </div>
+                        <div class="w-full md:w-2/3">
+                            <h3 class="text-2xl font-bold text-gray-700 mb-2">Cartas de Energia</h3>
+                            <p class="mb-4">O "combustível" para os ataques. Você liga elas aos seus Pokémon.</p>
+                            <p>Existem Energias Básicas (Fogo, Água, Grama, Elétrico, etc.) e Energias Especiais que têm efeitos adicionais.</p>
+                            <div class="bg-blue-50 p-3 rounded border border-blue-200 mt-2 text-sm">
+                                💡 <strong>Regra de Ouro:</strong> Você só pode ligar 1 carta de Energia por turno da sua mão aos seus Pokémon.
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Treinador -->
+                    <div class="flex flex-col md:flex-row gap-6 items-start">
+                        <div class="w-full md:w-1/3 bg-blue-100 border-2 border-blue-400 rounded-xl p-4 text-center aspect-[2.5/3.5] flex flex-col shadow-sm">
+                            <div class="font-bold text-sm text-blue-800 text-right mb-2">Item</div>
+                            <h4 class="font-bold text-lg mb-2">Poção</h4>
+                            <div class="bg-white p-3 rounded flex-grow text-sm border text-left">
+                                Cure 30 de dano de 1 dos seus Pokémon.
+                            </div>
+                        </div>
+                        <div class="w-full md:w-2/3">
+                            <h3 class="text-2xl font-bold text-blue-600 mb-2">Cartas de Treinador</h3>
+                            <p class="mb-4">Representam ações, itens ou lugares que ajudam na batalha.</p>
+                            <ul class="list-disc pl-5 space-y-2">
+                                <li><strong>Itens:</strong> Jogue quantos quiser no seu turno (Ex: Poké Bola para buscar cartas, Poções para curar).</li>
+                                <li><strong>Apoiadores (Supporters):</strong> Personagens poderosos. <strong>Apenas 1 por turno!</strong> Geralmente compram muitas cartas.</li>
+                                <li><strong>Estádios:</strong> Ficam no meio da mesa e afetam ambos os jogadores. Só pode haver 1 Estádio em jogo por vez.</li>
+                                <li><strong>Ferramentas:</strong> Itens que você liga permanentemente a um Pokémon (1 por Pokémon) para dar habilidades extras.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Preparação -->
+            <section id="setup" class="content-section bg-white p-8 rounded-xl shadow-md border-t-4 border-purple-500">
+                <h2 class="text-3xl font-bold mb-6 text-gray-900 border-b pb-2">Preparação do Jogo (Setup)</h2>
+                
+                <div class="relative pl-8 space-y-6 before:absolute before:inset-0 before:ml-4 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-1 before:bg-gradient-to-b before:from-transparent before:via-purple-300 before:to-transparent">
+                    
+                    <!-- Step 1 -->
+                    <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                        <div class="flex items-center justify-center w-10 h-10 rounded-full border-4 border-white bg-purple-500 text-slate-100 font-bold shadow shrink-0 z-10 absolute -left-12 md:relative md:left-0">1</div>
+                        <div class="w-full md:w-[calc(50%-2.5rem)] md:group-odd:pl-8 md:group-even:pr-8">
+                            <div class="bg-purple-50 p-4 rounded-lg border border-purple-100 shadow-sm">
+                                <h4 class="font-bold text-lg text-purple-800">Cumprimente e Embaralhe</h4>
+                                <p class="text-sm">Cumprimente o oponente, decidam quem começa (cara ou coroa) e embaralhem seus baralhos.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2 -->
+                    <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
+                        <div class="flex items-center justify-center w-10 h-10 rounded-full border-4 border-white bg-purple-500 text-slate-100 font-bold shadow shrink-0 z-10 absolute -left-12 md:relative md:left-0">2</div>
+                        <div class="w-full md:w-[calc(50%-2.5rem)] md:group-odd:pl-8 md:group-even:pr-8">
+                            <div class="bg-purple-50 p-4 rounded-lg border border-purple-100 shadow-sm">
+                                <h4 class="font-bold text-lg text-purple-800">Mão Inicial</h4>
+                                <p class="text-sm">Compre <strong>7 cartas</strong> do topo do seu baralho.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 3 -->
+                    <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
+                        <div class="flex items-center justify-center w-10 h-10 rounded-full border-4 border-white bg-purple-500 text-slate-100 font-bold shadow shrink-0 z-10 absolute -left-12 md:relative md:left-0">3</div>
+                        <div class="w-full md:w-[calc(50%-2.5rem)] md:group-odd:pl-8 md:group-even:pr-8">
+                            <div class="bg-purple-50 p-4 rounded-lg border border-purple-100 shadow-sm">
+                                <h4 class="font-bold text-lg text-purple-800">Pokémon Ativo</h4>
+                                <p class="text-sm">Escolha um <strong>Pokémon Básico</strong> da sua mão e coloque-o virado para baixo no campo como seu Pokémon Ativo.</p>
+                                <p class="text-xs text-red-600 font-bold mt-1">Sem Básico? Mostre a mão, embaralhe tudo de volta, compre 7 novas. O oponente pode comprar 1 carta extra.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 4 -->
+                    <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
+                        <div class="flex items-center justify-center w-10 h-10 rounded-full border-4 border-white bg-purple-500 text-slate-100 font-bold shadow shrink-0 z-10 absolute -left-12 md:relative md:left-0">4</div>
+                        <div class="w-full md:w-[calc(50%-2.5rem)] md:group-odd:pl-8 md:group-even:pr-8">
+                            <div class="bg-purple-50 p-4 rounded-lg border border-purple-100 shadow-sm">
+                                <h4 class="font-bold text-lg text-purple-800">O Banco</h4>
+                                <p class="text-sm">Você pode colocar até mais 5 Pokémon Básicos da sua mão virados para baixo na sua área de Banco (bench).</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 5 -->
+                    <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
+                        <div class="flex items-center justify-center w-10 h-10 rounded-full border-4 border-white bg-purple-500 text-slate-100 font-bold shadow shrink-0 z-10 absolute -left-12 md:relative md:left-0">5</div>
+                        <div class="w-full md:w-[calc(50%-2.5rem)] md:group-odd:pl-8 md:group-even:pr-8">
+                            <div class="bg-purple-50 p-4 rounded-lg border border-purple-100 shadow-sm">
+                                <h4 class="font-bold text-lg text-purple-800">Cartas de Prêmio</h4>
+                                <p class="text-sm">Separe as <strong>6 cartas</strong> do topo do seu baralho e coloque-as viradas para baixo como seus Prêmios, sem olhar.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 6 -->
+                    <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
+                        <div class="flex items-center justify-center w-10 h-10 rounded-full border-4 border-white bg-purple-500 text-slate-100 font-bold shadow shrink-0 z-10 absolute -left-12 md:relative md:left-0">6</div>
+                        <div class="w-full md:w-[calc(50%-2.5rem)] md:group-odd:pl-8 md:group-even:pr-8">
+                            <div class="bg-purple-50 p-4 rounded-lg border border-purple-100 shadow-sm">
+                                <h4 class="font-bold text-lg text-purple-800">Comece!</h4>
+                                <p class="text-sm">Ambos os jogadores viram seus Pokémon para cima. O jogo começa!</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- Section: Turno -->
+            <section id="turn" class="content-section bg-white p-8 rounded-xl shadow-md border-t-4 border-orange-500">
+                <h2 class="text-3xl font-bold mb-6 text-gray-900 border-b pb-2">O Turno do Jogador</h2>
+                <p class="mb-4 text-lg">Um turno sempre segue uma ordem estrita:</p>
+                
+                <div class="bg-orange-50 p-5 rounded-lg border border-orange-200 mb-6">
+                    <h3 class="text-xl font-bold text-orange-800 flex items-center"><span class="bg-orange-500 text-white rounded-full w-8 h-8 flex items-center justify-center mr-2">1</span> COMPRAR CARTA</h3>
+                    <p class="mt-2 ml-10">Você <strong>DEVE</strong> começar seu turno comprando a carta do topo do baralho. (Se não tiver cartas para comprar, você perde).</p>
+                </div>
+
+                <div class="bg-blue-50 p-5 rounded-lg border border-blue-200 mb-6">
+                    <h3 class="text-xl font-bold text-blue-800 flex items-center"><span class="bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center mr-2">2</span> AÇÕES (Em qualquer ordem)</h3>
+                    <ul class="list-none mt-3 ml-10 space-y-3">
+                        <li class="flex items-start">
+                            <span class="text-blue-500 mr-2 mt-1">⚡</span>
+                            <div><strong>Ligar Energia:</strong> 1 vez por turno, da mão para um Pokémon.</div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-blue-500 mr-2 mt-1">🐭</span>
+                            <div><strong>Colocar Básico:</strong> Quantos quiser da mão para o Banco (máx 5 no banco).</div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-blue-500 mr-2 mt-1">🔄</span>
+                            <div><strong>Evoluir:</strong> Quantos quiser (mas o Pokémon deve estar em jogo desde o turno anterior).</div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-blue-500 mr-2 mt-1">🎒</span>
+                            <div><strong>Jogar Treinadores:</strong> Itens ilimitados, 1 Apoiador, 1 Estádio.</div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-blue-500 mr-2 mt-1">✨</span>
+                            <div><strong>Usar Habilidades:</strong> Quantas quiser (leia a carta para restrições).</div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-blue-500 mr-2 mt-1">🏃</span>
+                            <div><strong>Recuar (Retreat):</strong> 1 vez por turno. Troque o Pokémon Ativo por um do Banco pagando o Custo de Recuo (descartando Energias ligadas a ele).</div>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="bg-red-50 p-5 rounded-lg border border-red-200 mb-2">
+                    <h3 class="text-xl font-bold text-red-800 flex items-center"><span class="bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center mr-2">3</span> ATACAR E TERMINAR</h3>
+                    <p class="mt-2 ml-10">Você escolhe um ataque do seu Pokémon Ativo (você deve ter as energias necessárias ligadas a ele). Aplique o dano e efeitos. <strong>Após atacar, seu turno acaba imediatamente.</strong></p>
+                </div>
+                
+                <div class="bg-gray-100 p-3 rounded text-sm mt-4 text-center border">
+                    <span class="font-bold text-gray-700">Regra do 1º Turno:</span> O jogador que joga primeiro não pode Atacar e não pode usar uma carta de Apoiador (Supporter) no seu primeiro turno.
+                </div>
+            </section>
+
+             <!-- Section: Combate e Dano -->
+            <section id="combat" class="content-section bg-white p-8 rounded-xl shadow-md border-t-4 border-red-800">
+                <h2 class="text-3xl font-bold mb-6 text-gray-900 border-b pb-2">Atacando e Fraqueza</h2>
+                
+                <div class="flex flex-col md:flex-row gap-6">
+                    <div class="w-full md:w-1/2 space-y-4">
+                        <h3 class="text-xl font-bold text-red-700">Como Atacar</h3>
+                        <ol class="list-decimal pl-5 space-y-2">
+                            <li>Veja os ataques do seu Pokémon Ativo.</li>
+                            <li>Verifique se ele tem a quantidade e tipo de <span class="font-bold">Energia</span> necessários ligados a ele. (Símbolo de Estrela/Cinza significa qualquer tipo de energia).</li>
+                            <li>Anuncie o ataque.</li>
+                            <li>Verifique <strong>Fraqueza</strong> e <strong>Resistência</strong> do Pokémon Defensor (impresso na carta dele).</li>
+                            <li>Coloque os marcadores de dano no Pokémon do oponente.</li>
+                        </ol>
+                        
+                        <div class="bg-red-100 p-4 rounded-lg mt-4 border border-red-200">
+                            <h4 class="font-bold text-red-900 mb-1">Nocaute (Knock Out)</h4>
+                            <p class="text-sm">Se o dano for igual ou maior que o HP do Pokémon, ele é Nocauteado. Vai para o descarte (junto com todas as cartas ligadas a ele). O oponente que nocauteou <strong>pega 1 Carta de Prêmio</strong> (ou mais, dependendo do Pokémon).</p>
+                        </div>
+                    </div>
+                    
+                    <div class="w-full md:w-1/2 bg-gray-50 p-6 rounded-xl border-2 border-dashed border-gray-300">
+                        <h3 class="text-lg font-bold text-center mb-4">Exemplo de Cálculo de Dano</h3>
+                        <div class="flex justify-between items-center mb-4">
+                            <div class="text-center">
+                                <div class="bg-blue-100 p-2 rounded-lg border border-blue-400 w-24 h-32 flex flex-col justify-center items-center shadow-sm">
+                                    <span class="text-2xl">💧</span>
+                                    <span class="font-bold text-xs mt-1">Ataque: 30</span>
+                                </div>
+                                <span class="text-xs font-bold mt-1 block">Atacante</span>
+                            </div>
+                            <div class="text-2xl font-bold text-gray-400">➡️</div>
+                            <div class="text-center">
+                                <div class="bg-red-100 p-2 rounded-lg border border-red-400 w-24 h-32 flex flex-col justify-between items-center shadow-sm">
+                                    <span class="text-xs font-bold text-red-600">60 HP</span>
+                                    <span class="text-2xl">🔥</span>
+                                    <span class="text-[10px] font-bold bg-white px-1 rounded">Fraqueza: 💧x2</span>
+                                </div>
+                                <span class="text-xs font-bold mt-1 block">Defensor</span>
+                            </div>
+                        </div>
+                        <div class="bg-white p-3 rounded shadow-sm text-center">
+                            Dano Base: <strong>30</strong><br>
+                            Fraqueza x2 (Água contra Fogo): 30 x 2 = <strong>60 Dano!</strong><br>
+                            <span class="text-red-600 font-bold animate-pulse">NOCAUTE!</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Tutorial Animado -->
+            <section id="interactive-tutorial" class="content-section bg-white p-8 rounded-xl shadow-md border-t-4 border-indigo-500">
+                <h2 class="text-3xl font-bold mb-2 text-gray-900">Na Prática: O Turno de Combate</h2>
+                <p class="text-gray-600 mb-6">Veja como as mecânicas funcionam na mesa. Clique no botão abaixo para avançar os passos do turno.</p>
+                
+                <!-- Tutorial Layout -->
+                <div class="tutorial-board bg-slate-800 rounded-xl p-6 relative overflow-hidden shadow-inner border-4 border-slate-700 mx-auto max-w-2xl">
+                    
+                    <!-- Opponent Side (Top) -->
+                    <div class="relative h-40 flex justify-center items-end border-b-2 border-slate-600 pb-4 mb-4">
+                        <div class="absolute top-2 right-2 text-slate-400 text-sm font-bold tracking-widest">OPONENTE</div>
+                        
+                        <!-- Opponent Active Pokemon -->
+                        <div id="opp-pokemon" class="card-sprite relative bg-blue-100 border-4 border-blue-400 rounded-xl w-28 h-36 flex flex-col items-center justify-between p-2 shadow-lg z-10 bg-white">
+                            <div class="w-full flex justify-between items-center text-xs font-bold">
+                                <span>Básico</span><span class="text-red-600">60 HP</span>
+                            </div>
+                            <div class="text-5xl my-1">🐟</div>
+                            <div class="text-xs font-bold text-center w-full bg-blue-200 rounded py-1">Magikarp</div>
+                            
+                            <!-- Damage Indicator (Hidden initially) -->
+                            <div id="damage-indicator" class="absolute -top-4 -right-4 bg-red-600 text-white font-black text-xl rounded-full w-12 h-12 flex items-center justify-center border-2 border-white opacity-0 z-20">
+                                -30
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Player Side (Bottom) -->
+                    <div class="relative h-48 flex justify-center items-start pt-4">
+                        <div class="absolute bottom-2 left-2 text-slate-400 text-sm font-bold tracking-widest">VOCÊ</div>
+                        
+                        <!-- Prize Cards -->
+                        <div class="absolute left-4 top-4 flex flex-col gap-1">
+                            <div class="text-xs text-yellow-400 font-bold mb-1">Prêmios</div>
+                            <div id="prize-card" class="w-12 h-16 bg-blue-800 rounded border-2 border-blue-300 shadow flex items-center justify-center text-blue-300 transform -rotate-6">🎴</div>
+                            <div class="w-12 h-16 bg-blue-800 rounded border-2 border-blue-300 shadow flex items-center justify-center text-blue-300 transform -rotate-6 absolute top-2 left-2 -z-10">🎴</div>
+                        </div>
+
+                        <!-- Player Active Pokemon -->
+                        <div id="player-pokemon" class="card-sprite relative bg-yellow-100 border-4 border-yellow-400 rounded-xl w-28 h-36 flex flex-col items-center justify-between p-2 shadow-lg z-10 bg-white">
+                            
+                            <!-- Energy Attached (Hidden initially) -->
+                            <div id="attached-energy" class="absolute -left-4 -top-4 w-10 h-10 rounded-full bg-yellow-400 border-2 border-white shadow-md flex items-center justify-center text-xl hidden z-0">
+                                ⚡
+                            </div>
+
+                            <div class="w-full flex justify-between items-center text-xs font-bold">
+                                <span>Básico</span><span class="text-red-600">60 HP</span>
+                            </div>
+                            <div class="text-5xl my-1">🐭</div>
+                            <div class="text-xs font-bold text-center w-full bg-yellow-200 rounded py-1">Pikachu</div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Controls & Narrative -->
+                <div class="mt-6 flex flex-col md:flex-row items-center gap-4">
+                    <button id="tut-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-transform transform hover:scale-105 active:scale-95 flex-shrink-0">
+                        Iniciar Turno ▶️
+                    </button>
+                    <div class="bg-indigo-50 border border-indigo-200 p-4 rounded-lg flex-grow text-indigo-900 w-full min-h-[5rem] flex items-center">
+                        <p id="tut-text" class="text-lg font-medium transition-opacity duration-300">Pikachu está pronto para batalhar contra o Magikarp do oponente!</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Pokédex Completa -->
+            <section id="pokedex" class="content-section bg-white p-8 rounded-xl shadow-md border-t-4 border-red-500 relative min-h-[500px]">
+                <h2 class="text-3xl font-bold mb-6 text-gray-900 border-b pb-2 flex items-center gap-3">
+                    <span class="text-3xl">📱</span> Pokédex Completa
+                </h2>
+                
+                <div class="flex flex-col md:flex-row gap-4 mb-6 sticky top-0 bg-white z-10 py-2">
+                    <input type="text" id="poke-search" placeholder="Busque por nome ou número (ex: pikachu, 150)..." class="flex-grow p-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-500 shadow-sm transition">
+                    <select id="poke-type-filter" class="p-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-500 shadow-sm bg-white">
+                        <option value="">Todos os Tipos</option>
+                        <!-- Options generated by JS -->
+                    </select>
+                </div>
+
+                <!-- Pokédex Grid Container -->
+                <div id="pokedex-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    <!-- Cards de Pokémon serão inseridos aqui dinamicamente -->
+                </div>
+
+                <div class="mt-8 flex justify-center w-full">
+                    <button id="load-more-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-8 rounded-full shadow transition transform hover:scale-105 flex items-center gap-2">
+                        <span>Carregar Mais</span>
+                        <div id="load-spinner" class="loading-spinner hidden" style="width: 20px; height: 20px; border-width: 3px; border-left-color: white;"></div>
+                    </button>
+                </div>
+                
+                <!-- Modal de Detalhes do Pokémon -->
+                <div id="poke-modal" class="fixed inset-0 bg-black/60 hidden z-[100] flex items-center justify-center p-4 backdrop-blur-sm opacity-0 transition-opacity duration-300">
+                    <div class="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl transform scale-95 transition-transform duration-300 pt-16 relative" id="poke-modal-content">
+                        <!-- Conteúdo do Modal inserido via JS -->
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <script>
+        // Navigation Structure
+        const sections = [
+            { id: 'intro', title: 'Objetivo do Jogo', icon: '🎯' },
+            { id: 'components', title: 'O Que Precisa', icon: '🎒' },
+            { id: 'card-types', title: 'Tipos de Cartas', icon: '🃏' },
+            { id: 'setup', title: 'Preparação Inicial', icon: '⚙️' },
+            { id: 'turn', title: 'O Turno', icon: '🔄' },
+            { id: 'combat', title: 'Combate e Dano', icon: '⚔️' },
+            { id: 'interactive-tutorial', title: 'Tutorial Animado', icon: '✨' }, // NEW SECTION ADDED
+            { id: 'pokedex', title: 'Pokédex Completa', icon: '📱' }, // ADDED POKEDEX
+        ];
+
+        const navMenu = document.getElementById('nav-menu');
+        const contentSections = document.querySelectorAll('.content-section');
+
+        // Generate Navigation
+        sections.forEach((sec, index) => {
+            const btn = document.createElement('button');
+            btn.className = `w-full text-left px-4 py-3 rounded-lg transition-colors duration-200 flex items-center hover:bg-gray-100 focus:outline-none nav-button ${index === 0 ? 'active' : 'text-gray-600'}`;
+            btn.innerHTML = `<span class="mr-3 text-lg">${sec.icon}</span> ${sec.title}`;
+            
+            btn.addEventListener('click', () => {
+                // Update active button
+                document.querySelectorAll('.nav-button').forEach(b => {
+                    b.classList.remove('active', 'bg-red-500', 'text-white', 'font-bold');
+                    b.classList.add('text-gray-600', 'hover:bg-gray-100');
+                });
+                btn.classList.remove('text-gray-600', 'hover:bg-gray-100');
+                btn.classList.add('active');
+
+                // Update active section
+                contentSections.forEach(section => {
+                    section.classList.remove('active');
+                });
+                document.getElementById(sec.id).classList.add('active');
+
+                // Scroll to top of main content
+                document.querySelector('main').scrollTop = 0;
+            });
+
+            navMenu.appendChild(btn);
+        });
+
+        // ==========================================
+        // Interactive Tutorial Logic
+        // ==========================================
+        let currentStep = 0;
+        const tutBtn = document.getElementById('tut-btn');
+        const tutText = document.getElementById('tut-text');
+        
+        // Elements to animate
+        const attachedEnergy = document.getElementById('attached-energy');
+        const playerPokemon = document.getElementById('player-pokemon');
+        const oppPokemon = document.getElementById('opp-pokemon');
+        const damageIndicator = document.getElementById('damage-indicator');
+        const prizeCard = document.getElementById('prize-card');
+
+        // Steps sequence
+        const tutorialSteps = [
+            {
+                btnText: "Ligar Energia ⚡",
+                text: "<strong>Passo 1: Ligar Energia.</strong> Você liga 1 carta de Energia Elétrica da sua mão ao Pikachu.",
+                action: () => {
+                    attachedEnergy.classList.remove('hidden');
+                    attachedEnergy.classList.add('energy-attached');
+                }
+            },
+            {
+                btnText: "Atacar! ⚔️",
+                text: "<strong>Passo 2: Declarar o Ataque.</strong> Pikachu agora tem energia para usar o 'Choque do Trovão' causando 30 de Dano!",
+                action: () => {
+                    // Pikachu attacks
+                    playerPokemon.classList.add('is-attacking');
+                    
+                    // Magikarp takes damage shortly after
+                    setTimeout(() => {
+                        oppPokemon.classList.add('is-taking-damage');
+                        damageIndicator.classList.add('damage-popup');
+                    }, 400);
+
+                    // Clean up animation classes after they finish
+                    setTimeout(() => {
+                        playerPokemon.classList.remove('is-attacking');
+                        oppPokemon.classList.remove('is-taking-damage');
+                    }, 1000);
+                }
+            },
+            {
+                btnText: "Recolher Prêmio 🎁",
+                text: "<strong>Nocaute!</strong> Magikarp tinha apenas 30 HP e foi derrotado. Como você derrotou um Pokémon, você pega 1 Carta de Prêmio!",
+                action: () => {
+                    oppPokemon.classList.add('is-fainting');
+                    setTimeout(() => {
+                        prizeCard.classList.add('prize-taken');
+                    }, 500);
+                }
+            },
+            {
+                btnText: "Reiniciar Tutorial 🔄",
+                text: "Parabéns! Você executou as mecânicas básicas de um turno com sucesso.",
+                action: () => {
+                    // Do nothing on click, just prepare for reset in the main loop
+                }
+            }
+        ];
+
+        function resetTutorial() {
+            attachedEnergy.classList.add('hidden');
+            attachedEnergy.classList.remove('energy-attached');
+            
+            playerPokemon.classList.remove('is-attacking');
+            
+            oppPokemon.classList.remove('is-taking-damage', 'is-fainting');
+            
+            damageIndicator.classList.remove('damage-popup');
+            
+            prizeCard.classList.remove('prize-taken');
+            
+            currentStep = 0;
+            tutBtn.innerHTML = "Iniciar Turno ▶️";
+            tutText.innerHTML = "Pikachu está pronto para batalhar contra o Magikarp do oponente!";
+        }
+
+        tutBtn.addEventListener('click', () => {
+            if (currentStep >= tutorialSteps.length) {
+                resetTutorial();
+                return;
+            }
+
+            const step = tutorialSteps[currentStep];
+            
+            // Text fade effect
+            tutText.style.opacity = 0;
+            setTimeout(() => {
+                tutText.innerHTML = step.text;
+                tutText.style.opacity = 1;
+            }, 150);
+            
+            // Execute animation action
+            step.action();
+            
+            // Update button for NEXT step
+            currentStep++;
+            if(currentStep < tutorialSteps.length) {
+                tutBtn.innerHTML = tutorialSteps[currentStep].btnText;
+            } else {
+                tutBtn.innerHTML = "Reiniciar Tutorial 🔄";
+            }
+        });
+
+        // ==========================================
+        // Pokédex Logic (PokeAPI Integration)
+        // ==========================================
+        let offset = 0;
+        const limit = 30; // Load 30 pokemon at a time
+        let loadedPokemon = [];
+        let isFetching = false;
+
+        // Translation and Color mapping for Pokémon Types
+        const typeConfig = {
+            normal:   { color: '#A8A878', pt: 'Normal' },
+            fire:     { color: '#F08030', pt: 'Fogo' },
+            water:    { color: '#6890F0', pt: 'Água' },
+            electric: { color: '#F8D030', pt: 'Elétrico' },
+            grass:    { color: '#78C850', pt: 'Planta' },
+            ice:      { color: '#98D8D8', pt: 'Gelo' },
+            fighting: { color: '#C03028', pt: 'Lutador' },
+            poison:   { color: '#A040A0', pt: 'Venenoso' },
+            ground:   { color: '#E0C068', pt: 'Terrestre' },
+            flying:   { color: '#A890F0', pt: 'Voador' },
+            psychic:  { color: '#F85888', pt: 'Psíquico' },
+            bug:      { color: '#A8B820', pt: 'Inseto' },
+            rock:     { color: '#B8A038', pt: 'Pedra' },
+            ghost:    { color: '#705898', pt: 'Fantasma' },
+            dragon:   { color: '#7038F8', pt: 'Dragão' },
+            dark:     { color: '#705848', pt: 'Sombrio' },
+            steel:    { color: '#B8B8D0', pt: 'Metal' },
+            fairy:    { color: '#EE99AC', pt: 'Fada' }
+        };
+
+        const grid = document.getElementById('pokedex-grid');
+        const loadBtn = document.getElementById('load-more-btn');
+        const spinner = document.getElementById('load-spinner');
+        const searchInput = document.getElementById('poke-search');
+        const typeFilter = document.getElementById('poke-type-filter');
+        const modal = document.getElementById('poke-modal');
+        const modalContent = document.getElementById('poke-modal-content');
+
+        // Populate Type Filter Options
+        Object.entries(typeConfig).forEach(([key, val]) => {
+            const opt = document.createElement('option');
+            opt.value = key;
+            opt.textContent = val.pt;
+            typeFilter.appendChild(opt);
+        });
+
+        // Format ID function (e.g. 1 -> #001)
+        const formatId = (id) => `#${id.toString().padStart(3, '0')}`;
+
+        // Fetch basic list and then detailed data
+        async function fetchPokemonBatch() {
+            if (isFetching) return;
+            isFetching = true;
+            spinner.classList.remove('hidden');
+            
+            try {
+                const url = `https://pokeapi.co/api/v2/pokemon?limit=${limit}&offset=${offset}`;
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                // Fetch details for all pokemon in the current batch
+                const detailedPromises = data.results.map(p => fetch(p.url).then(res => res.json()));
+                const newPokemonList = await Promise.all(detailedPromises);
+                
+                loadedPokemon = [...loadedPokemon, ...newPokemonList];
+                renderGrid(newPokemonList); 
+                offset += limit;
+            } catch (err) {
+                console.error("Erro ao carregar a Pokédex", err);
+            } finally {
+                isFetching = false;
+                spinner.classList.add('hidden');
+            }
+        }
+
+        // Create Individual Pokemon Card HTML
+        function createPokeCard(pokemon) {
+            const typesHTML = pokemon.types.map(t => {
+                const conf = typeConfig[t.type.name];
+                return `<span class="type-badge" style="background-color: ${conf ? conf.color : '#777'}">${conf ? conf.pt : t.type.name}</span>`;
+            }).join('');
+
+            const mainTypeColor = typeConfig[pokemon.types[0].type.name]?.color || '#cbd5e1';
+
+            const card = document.createElement('div');
+            card.className = 'poke-card bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm flex flex-col relative';
+            card.innerHTML = `
+                <div class="h-28 flex justify-center items-center relative overflow-hidden" style="background-color: ${mainTypeColor}22">
+                    <div class="absolute -right-4 -bottom-4 w-24 h-24 rounded-full bg-white opacity-20"></div>
+                    <span class="absolute top-2 left-2 text-xs font-black text-gray-500 opacity-60">${formatId(pokemon.id)}</span>
+                    <img src="${pokemon.sprites.other['official-artwork'].front_default || pokemon.sprites.front_default}" 
+                         alt="${pokemon.name}" class="h-24 object-contain drop-shadow-md z-10 transition-transform duration-300 hover:scale-110">
+                </div>
+                <div class="p-3 text-center bg-white flex-grow">
+                    <h3 class="font-bold text-gray-800 capitalize mb-2 text-sm md:text-base truncate">${pokemon.name.replace('-', ' ')}</h3>
+                    <div class="flex flex-wrap justify-center gap-1">
+                        ${typesHTML}
+                    </div>
+                </div>
+            `;
+            
+            card.addEventListener('click', () => openModal(pokemon));
+            return card;
+        }
+
+        // Render cards into the Grid
+        function renderGrid(pokemonList, replace = false) {
+            if (replace) grid.innerHTML = '';
+            pokemonList.forEach(p => grid.appendChild(createPokeCard(p)));
+        }
+
+        // Search & Filter Logic
+        let searchTimeout;
+        async function handleSearchAndFilter() {
+            const query = searchInput.value.toLowerCase().trim();
+            const type = typeFilter.value;
+            
+            grid.innerHTML = ''; // Clear grid
+            
+            // If empty, revert to standard loaded list
+            if (query === '' && type === '') {
+                loadBtn.style.display = 'flex';
+                renderGrid(loadedPokemon, true);
+                return;
+            }
+
+            loadBtn.style.display = 'none'; // Hide "load more" while searching
+            grid.innerHTML = '<div class="col-span-full text-center py-8 text-gray-500 animate-pulse">Buscando Pokémon...</div>';
+
+            try {
+                let results = [];
+                
+                if (query !== '') {
+                    // Search specific Pokemon directly via API
+                    const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${query}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        results = [data];
+                    }
+                } else {
+                    // Filter by specific Type via API
+                    const res = await fetch(`https://pokeapi.co/api/v2/type/${type}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        // Limit to 30 for performance during filtering
+                        const slicedUrls = data.pokemon.slice(0, 30).map(p => p.pokemon.url);
+                        const detailedPromises = slicedUrls.map(url => fetch(url).then(r => r.json()));
+                        results = await Promise.all(detailedPromises);
+                    }
+                }
+                
+                // Final Type Match check (if user searched Name AND filtered by Type)
+                if (type !== '' && query !== '') {
+                    results = results.filter(p => p.types.some(t => t.type.name === type));
+                }
+
+                if (results.length > 0) {
+                    renderGrid(results, true);
+                } else {
+                    grid.innerHTML = '<div class="col-span-full text-center py-8 text-gray-500 font-bold">Nenhum Pokémon encontrado. Verifique o nome ou filtro.</div>';
+                }
+            } catch (e) {
+                grid.innerHTML = '<div class="col-span-full text-center py-8 text-gray-500 font-bold">Nenhum Pokémon encontrado. Tente pesquisar pelo nome exato em inglês ou número.</div>';
+            }
+        }
+
+        searchInput.addEventListener('input', () => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(handleSearchAndFilter, 600); // Debounce
+        });
+        typeFilter.addEventListener('change', handleSearchAndFilter);
+        loadBtn.addEventListener('click', fetchPokemonBatch);
+
+        // Pokedex Modal Logic
+        function openModal(pokemon) {
+            const mainTypeColor = typeConfig[pokemon.types[0].type.name]?.color || '#cbd5e1';
+            const bgGradient = `linear-gradient(135deg, ${mainTypeColor}88 0%, ${mainTypeColor}22 100%)`;
+            
+            // Format Stats Bars
+            const statsHTML = pokemon.stats.map(s => {
+                const statName = s.stat.name.replace('special-attack', 'Sp.Atk').replace('special-defense', 'Sp.Def').replace('hp', 'HP').toUpperCase();
+                const width = Math.min(100, (s.base_stat / 200) * 100); // Max expected stat is ~200
+                return `
+                    <div class="flex items-center text-xs mb-2">
+                        <span class="w-16 font-bold text-gray-600">${statName}</span>
+                        <span class="w-8 text-right mr-3 font-medium">${s.base_stat}</span>
+                        <div class="flex-grow bg-gray-200 rounded-full h-2.5 overflow-hidden shadow-inner">
+                            <div class="h-2.5 rounded-full" style="width: ${width}%; background-color: ${mainTypeColor}"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            const typesHTML = pokemon.types.map(t => {
+                const conf = typeConfig[t.type.name];
+                return `<span class="type-badge text-sm px-4 py-1" style="background-color: ${conf ? conf.color : '#777'}">${conf ? conf.pt : t.type.name}</span>`;
+            }).join('');
+
+            modalContent.innerHTML = `
+                <div class="absolute -top-16 left-1/2 transform -translate-x-1/2 w-32 h-32 z-10">
+                    <img src="${pokemon.sprites.other['official-artwork'].front_default || pokemon.sprites.front_default}" 
+                         class="w-full h-full object-contain drop-shadow-[0_10px_8px_rgba(0,0,0,0.4)]">
+                </div>
+                <div class="pt-16 pb-6 px-6 relative rounded-t-2xl" style="background: ${bgGradient}">
+                    <button id="close-modal" class="absolute top-3 right-4 text-gray-700 hover:text-black text-3xl font-black bg-white/30 rounded-full w-8 h-8 flex items-center justify-center transition">&times;</button>
+                    <span class="absolute top-4 left-4 text-xl font-black text-black opacity-20">${formatId(pokemon.id)}</span>
+                    
+                    <div class="text-center mt-2">
+                        <h2 class="text-3xl font-bold capitalize text-gray-900 mb-3">${pokemon.name.replace('-', ' ')}</h2>
+                        <div class="flex justify-center gap-2 mb-4">${typesHTML}</div>
+                    </div>
+                </div>
+                
+                <div class="px-6 pb-6 pt-4 bg-white">
+                    <div class="bg-gray-50 p-4 rounded-xl shadow-inner border border-gray-100">
+                        <h4 class="font-bold text-gray-700 mb-3 border-b pb-1 text-left flex items-center gap-2">
+                            <span>📊</span> Estatísticas Base
+                        </h4>
+                        ${statsHTML}
+                    </div>
+                    <div class="flex justify-between mt-4 text-sm bg-blue-50/50 border border-blue-100 p-3 rounded-lg text-gray-700">
+                        <div class="flex flex-col items-center w-1/2 border-r border-blue-200">
+                            <span class="font-bold text-blue-900">📏 Altura</span>
+                            <span>${pokemon.height / 10} m</span>
+                        </div>
+                        <div class="flex flex-col items-center w-1/2">
+                            <span class="font-bold text-blue-900">⚖️ Peso</span>
+                            <span>${pokemon.weight / 10} kg</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modalContent.classList.remove('scale-95');
+            }, 10); // Trigger transition
+
+            document.getElementById('close-modal').addEventListener('click', closeModal);
+        }
+
+        function closeModal() {
+            modal.classList.add('opacity-0');
+            modalContent.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300); // Wait for transition
+        }
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+
+        // Fetch First Batch on Page Load
+        fetchPokemonBatch();
+
+    </script>
+</body>
+</html>
